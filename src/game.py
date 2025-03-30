@@ -34,14 +34,15 @@ while running:
         arena.player.central()
 
     arena.tick()
+    camX, camY = arena.getCamera()
 
     screen.fill("#030303")
 
     pygame.draw.rect(
         screen, "#FF0000" if arena.player.grounded else "#FFFFFF",
         (
-            (arena.player.x - 0.5) * arena.scale + WIDTH // 2,
-            (arena.player.y - 0.5) * arena.scale + HEIGHT // 2,
+            (arena.player.x - 0.5) * arena.scale + WIDTH // 2 - camX,
+            (arena.player.y - 0.5) * arena.scale + HEIGHT // 2 - camY,
             arena.scale, arena.scale,
         )
     )
@@ -50,12 +51,21 @@ while running:
         pygame.draw.rect(
             screen, "#FFFFFF",
             (
-                block.x * arena.scale + WIDTH // 2,
-                block.y * arena.scale + HEIGHT // 2,
+                block.x * arena.scale + WIDTH // 2 - camX,
+                block.y * arena.scale + HEIGHT // 2 - camY,
                 block.w * arena.scale,
                 block.h * arena.scale,
             )
         )
+
+    pygame.draw.rect(
+        screen, "#FF0000",
+        (
+            (arena.cambox[0] - arena.camW) * arena.scale + WIDTH // 2 - camX,
+            (arena.cambox[1] - arena.camH) * arena.scale + HEIGHT // 2 - camY,
+            arena.camW * arena.scale * 2, arena.camH * arena.scale * 2,
+        ), 5,
+    )
 
     pygame.display.update()
     clock.tick(FRAMERATE)

@@ -112,7 +112,7 @@ class Player:
         if self.grounded:
             self.py = 0
 
-        print(self.py, self.coyote)
+        # print(self.py, self.coyote) #
 
     def jump(self):
         if self.grounded or self.coyote > 0:
@@ -135,8 +135,22 @@ class Arena:
     def __init__(self, layout : list[Block]):
         self.layout = layout
         self.player = Player(self)
+        self.cambox : list[float, float] = [0, 0]
+
+        self.camW : float = 2.5
+        self.camH : float = 2.5
 
         self.scale : int = 75
 
     def tick(self):
         self.player.tick()
+        if self.player.x + 0.5 >= self.cambox[0] + self.camW:
+            self.cambox[0] += self.player.x - self.cambox[0] - self.camW + 0.05
+        if self.player.x - 0.5 <= self.cambox[0] - self.camW:
+            self.cambox[0] += self.player.x - self.cambox[0] + self.camW - 0.05
+
+    def getCamera(self) -> tuple[float, float]:
+        return (
+            self.cambox[0] * self.scale,
+            self.cambox[1] * self.scale,
+        )
