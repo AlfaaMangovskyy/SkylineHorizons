@@ -8,8 +8,10 @@ screen = pygame.display.set_mode(
 clock = pygame.time.Clock()
 
 arena = Arena([
-    Block(-7, 5, 14, 2)
-])
+    Block(-7, 5, 14, 2),
+    Block(7, 3, 2, 4),
+    Spikes(-7, 5, 3, 0),
+], [(5.5, 3.5)])
 
 if pygame.joystick.get_count() > 0:
     arena.controller = Controller(pygame.joystick.Joystick(0), arena.player)
@@ -24,7 +26,8 @@ while running:
                 running = False
                 break
             elif e.key == pygame.K_s:
-                arena.player.jump()
+                if not arena.controller:
+                    arena.player.jump()
 
         elif e.type == pygame.JOYBUTTONDOWN:
             if e.joy == arena.controller.joy.get_id():
@@ -40,16 +43,18 @@ while running:
 
     if not running: break
 
-    keymap = pygame.key.get_pressed()
-    if keymap[pygame.K_a]:
-        arena.player.left()
-    if keymap[pygame.K_d]:
-        arena.player.right()
-    if (not keymap[pygame.K_a]) and (not keymap[pygame.K_d]):
-        arena.player.central()
+    if not arena.controller:
+        keymap = pygame.key.get_pressed()
+        if keymap[pygame.K_a]:
+            arena.player.left()
+        if keymap[pygame.K_d]:
+            arena.player.right()
+        if (not keymap[pygame.K_a]) and (not keymap[pygame.K_d]):
+            arena.player.central()
 
     arena.tick()
     camX, camY = arena.getCamera()
+    # print(arena.player.py) #
 
     screen.fill("#030303")
 
@@ -62,16 +67,37 @@ while running:
         )
     )
 
-    for block in arena.layout:
-        pygame.draw.rect(
-            screen, "#FFFFFF",
-            (
-                block.x * arena.scale + WIDTH // 2 - camX,
-                block.y * arena.scale + HEIGHT // 2 - camY,
-                block.w * arena.scale,
-                block.h * arena.scale,
+    for object in arena.layout:
+        if isinstance(object, Block):
+            pygame.draw.rect(
+                screen, "#FFFFFF",
+                (
+                    object.x * arena.scale + WIDTH // 2 - camX,
+                    object.y * arena.scale + HEIGHT // 2 - camY,
+                    object.w * arena.scale,
+                    object.h * arena.scale,
+                )
             )
-        )
+
+        if isinstance(object, Spikes):
+            if object.d == 0:
+                pygame.draw.rect(
+                    screen, "#FF0000",
+                    (
+                        object.x * arena.scale + WIDTH // 2 - camX,
+                        object.y * arena.scale + HEIGHT // 2 - camY - 10,
+                        object.l * arena.scale, 20,
+                    )
+                )
+            else:
+                pygame.draw.rect(
+                    screen, "#FF0000",
+                    (
+                        object.x * arena.scale + WIDTH // 2 - camX - 10,
+                        object.y * arena.scale + HEIGHT // 2 - camY,
+                        20, object.l * arena.scale,
+                    )
+                )
 
     # pygame.draw.rect(
     #     screen, "#FF0000",
@@ -88,6 +114,19 @@ while running:
             HEIGHT // 2,
         ), 5,
     )
+
+    for checkpoint in arena.checkpoints:
+        checkX = checkpoint[0] * arena.scale + WIDTH // 2 - camX
+        checkY = checkpoint[1] * arena.scale + HEIGHT // 2 - camY
+        pygame.draw.polygon(
+            screen, "#00FF00",
+            (
+                (checkX - 25, checkY),
+                (checkX, checkY - 25),
+                (checkX + 25, checkY),
+                (checkX, checkY + 25),
+            )
+        )
 
     pygame.display.update()
     clock.tick(FRAMERATE)
