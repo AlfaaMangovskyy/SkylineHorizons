@@ -8,6 +8,9 @@ DIAGONAL = 1 / math.sqrt(2)
 
 def approx(a : float, b : float, diff : float):
     return a - diff <= b <= a + diff
+def sign(self, a : float) -> int:
+    if a == 0: return 0
+    return a // abs(a)
 
 class Block:
     def __init__(self, x : float, y : float, w : float, h : float):
@@ -55,6 +58,7 @@ class Player:
         self.doubleJump : bool = False
 
         self.direction : int = 0
+        # self.controller : Controller | None = None #
 
         self.px : float = 0.0
         self.py : float = 0.0
@@ -131,11 +135,43 @@ class Player:
     def central(self):
         self.direction = 0
 
+class Controller:
+    def __init__(self, joy, player : Player):
+        self.joy = joy
+        self.player = player
+
+        self.sensitivity = 0.25
+        self.joydirection = 0
+
+    def buttonDown(self, id : int):
+        print(id)
+        if id == 1:
+            self.player.jump()
+
+    def buttonUp(self, id : int):
+        pass
+
+    def axisMotion(self, axis : int, value : float):
+        if axis == 0:
+            print(value)
+            if value >= self.sensitivity:
+                self.joydirection = 1
+                self.player.right()
+            elif value <= -self.sensitivity:
+                self.joydirection = -1
+                self.player.left()
+            else:
+                self.joydirection = 0
+                self.player.central()
+            print("DIR", self.player.direction)
+
 class Arena:
     def __init__(self, layout : list[Block]):
         self.layout = layout
         self.player = Player(self)
         self.cambox : list[float, float] = [0, 0]
+
+        self.controller : Controller | None = None
 
         self.camW : float = 2.5
         self.camH : float = 2.5
@@ -144,10 +180,19 @@ class Arena:
 
     def tick(self):
         self.player.tick()
-        if self.player.x + 0.5 >= self.cambox[0] + self.camW:
-            self.cambox[0] += self.player.x - self.cambox[0] - self.camW + 0.05
-        if self.player.x - 0.5 <= self.cambox[0] - self.camW:
-            self.cambox[0] += self.player.x - self.cambox[0] + self.camW - 0.05
+        # if self.player.x + 0.5 >= self.cambox[0] + self.camW:
+        #     self.cambox[0] += self.player.x - self.cambox[0] - self.camW + 0.05
+        # if self.player.x - 0.5 <= self.cambox[0] - self.camW:
+        #     self.cambox[0] += self.player.x - self.cambox[0] + self.camW - 0.05
+        theta = math.atan2(self.cambox[1] - self.player.y, self.cambox[0] - self.player.x)
+        distance = math.sqrt((self.cambox[1] - self.player.y) ** 2 + (self.cambox[0] - self.player.x) ** 2)
+        # print(distance, theta * 180 / math.pi) #
+        if distance <= 0.12:
+            self.cambox[0] = self.player.x
+            self.cambox[1] = self.player.y
+        else:
+            self.cambox[0] += -0.12 * distance * math.cos(theta)
+            self.cambox[1] += -0.12 * distance * math.sin(theta)
 
     def getCamera(self) -> tuple[float, float]:
         return (
